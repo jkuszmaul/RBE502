@@ -29,6 +29,7 @@ function constraints = reg_tri_constraints(side_len, points)
       constraints(con_idx) = sum((points(i, 1:2) - points(j, 1:2)).^2) - side_len^2;
       %constraints(con_idx+1) = points(i, 3) - points(j, 3);
       con_idx = con_idx+1;
+      %Test
     end
   end
 end
