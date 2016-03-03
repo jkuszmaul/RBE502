@@ -11,9 +11,9 @@ elbows = @(t)[elbow_pos(base_r, link_length, 0, t(1));
               elbow_pos(base_r, link_length, 4*pi/3, t(3))];
 act_elbows = elbows([1 1 0])
 
-pos = sym('pos', [3, 3]);
-pos_all = pos;%[pos; pos; pos];
-eqs = [0 == reg_tri_constraints(pair_separation, pos);
+pos = sym('pos', [1, 3]);
+pos_all = [pos; pos; pos];
+eqs = [%0 == reg_tri_constraints(pair_separation, pos);
        0 == elbow_constraints(act_elbows, pos_all, 4)];
 %solve(eqs)
 %solve(0 == reg_hex_constraints(pair_separation, pos))
