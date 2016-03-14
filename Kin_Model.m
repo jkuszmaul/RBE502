@@ -66,7 +66,7 @@ classdef Kin_Model
             obj = Kin_Model;
             obj = obj.init(size(DH_Matrix,1));
             if nargin<2
-                obj.q = sym('q',obj.n_frames);
+                obj.q = sym('q',[obj.n_frames,1]);
             else
                 obj.q = jointVars;
             end
