@@ -10,7 +10,7 @@ classdef H_Trans
     properties (Dependent)
         Trans
         Rot
-        %Euler
+        Euler   %ZYX Euler Angles
     end
     
     methods
@@ -39,18 +39,16 @@ classdef H_Trans
             value = obj.H(1:3,4);
         end
 		
-% 		function obj = set.Euler(obj,value)
-%             disp('Euler Not Implemented');
-%         end
-%         function value = get.Euler(obj)
-%             disp('Euler Not Implemented');
-%         end
-        
-        function obj = inv(obj)
-			R=obj.Rot.';
-			obj.H = [ R  -R*obj.Trans
-					 0 0 0       1     ];
-		end
+		function obj = set.Euler(obj,value)
+            T=(H_Trans.rotZ(value(3))*H_Trans.rotY(value(2))*H_Trans.rotX(value(1)));
+            obj.Rot=T.Rot;
+        end
+        function value = get.Euler(obj)
+            R=obj.Rot;
+            value=[atan2(R(3,2),R(3,3));
+                   atan2(-R(1,3),sqrt(R(3,2)^2+R(3,3)^2));
+                   atan2(R(2,1),R(1,1))];
+        end
         
         function value = getRotVel(obj,var)
            w=simplify(diff(obj.Rot,var)*obj.Rot.');
@@ -64,21 +62,27 @@ classdef H_Trans
                 value(4:6,i) = simplify(obj.getRotVel(q(i)));
             end 
         end
+        
+        function obj = inv(obj)
+			R=obj.Rot.';
+			obj.H = [ R  -R*obj.Trans
+					 0 0 0       1     ];
+		end
     end
     
     methods
         function  c = mtimes(a,b)
-            c.H=mtimes(a.H,b.H);
+            c=H_Trans(mtimes(a.H,b.H));
         end
         
         function  c = mrdivide(a,b)
             a=a.inv();
-            c.H=mtimes(b.H,a.H);
+            c=H_Trans(mtimes(b.H,a.H));
         end
         
         function  c = mldivide(a,b)
             a=a.inv();
-            c.H=mtimes(a.H,b.H);
+            c=H_Trans(mtimes(a.H,b.H));
         end
     end
     
