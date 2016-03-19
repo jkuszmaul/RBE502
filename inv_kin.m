@@ -1,24 +1,17 @@
 function [ret, sym_theta, plots] = inv_kin()
   % Returns the inverse kinematics function handle, which
   % takes an end-effector homogeneous transformation matrix.
+  % Return values:
+  %  ret: A function handle that takes a homogeneous transformation
+  %       and returns the joint angles.
+  %  sym_theta: A 6x2 symbolic matrix of the joint angles as a function
+  %       of H (a homogeneous tranformation matrix. The two columns represent
+  %       the two possible solutions for each joint.
+  %  plots: A Function which takes a homogeneous transformation matrix and a set
+  %       of joint variables and plots the arm.
   ret = 0;
   H = sym('H', [4, 4]);
-  %H = eye(4);
   H(4, :) = [0 0 0 1];
-
-  % Translational component:
-  %H(1:3, 4) = [0; 0; -3];
-
-  % Rotational component:
-  thetaz = 1.0;
-  thetax = 1.5;
-  R = [cos(thetaz) -sin(thetaz) 0;
-       sin(thetaz) cos(thetaz) 0;
-       0          0          1];
-  R = [1          0            0;
-       0 cos(thetax) -sin(thetax);
-       0 sin(thetax) cos(thetax)] * R;
-  %H(1:3, 1:3) = R;
 
   % Various Parameters.
   link_sep = .1; % Distance between links in pairs of link segments.
@@ -40,33 +33,25 @@ function [ret, sym_theta, plots] = inv_kin()
     i
     res = solve(link_cts(i), theta(i), 'Real', 1);
     sym_theta(i, 1:2) = res';
-    continue
-    % Choose the result that actually makes sense (abs(theta) < pi/2).
-    if (abs(res(1)) < pi / 2)
-      sym_theta(i) = res(1);
-    else
-      sym_theta(i) = res(2);
-    end
   end
 
   ret = @eval_ret;
   plots = @plotter;
 
   function best = eval_ret(H_act)
-    angles = subs(sym_theta, H, H_act);
-    best = eval(angles(:, 1));
+    angles = eval(subs(sym_theta, H, H_act));
+    best = angles(:, 1);
     % Now, always choose the values with the smaller absolute value.
     for i = 1:6
       % Only need to change anything if abs(2) < abs(1)
       if abs(angles(i, 2)) < abs(angles(i, 1))
-        best(i) = eval(angles(i, 2));
+        best(i) = angles(i, 2);
       end
     end
   end
 
   function plotter(H_act, joints)
     % Do plotting.
-    elbow_pts
     eval_elb = subs(elbow_pts, theta, joints');
     eval_hex = subs(subs(hex_pts, theta, joints'), H, H_act);
     % Get locations of motor joints.
