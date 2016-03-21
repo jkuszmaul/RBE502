@@ -63,6 +63,14 @@ classdef H_Trans
             end 
         end
         
+        function func = getFunction(obj,input,expr)
+            if nargin<3
+                expr=obj.H;
+            end
+            
+            func=H_Trans.createFunction(expr,input);
+        end
+        
         function obj = inv(obj)
 			R=obj.Rot.';
 			obj.H = [ R  -R*obj.Trans
@@ -92,6 +100,7 @@ classdef H_Trans
             for i = 1:size(DH,1)
                 obj.H=obj.H*H_Trans.fromDH_single(DH(i,1),DH(i,2),DH(i,3),DH(i,4));
             end
+            obj.H=simplify(vpa(obj.H));
         end
         
         function obj = rotX(theta)
@@ -112,6 +121,33 @@ classdef H_Trans
                     0,0,1,0;
                     0,0,0,1]);
         end
+        
+        function func = createFunction(expr,input)
+            function vars = extractVars(in)
+                vars=[];
+                in=reshape(in,numel(in),1);
+                if iscell(in)
+                    for i=1:numel(in)
+                        in{i}=reshape(in{i},numel(in{i}),1);
+                        vars=union(vars,in{i});
+                    end
+                else
+                    vars=reshape(in,numel(in),1);
+                end
+            end
+            vars=extractVars(input);
+            
+            if size(setdiff(symvar(expr),symvar(vars)))>0
+                expr=vpa(expr);
+                func = @(q)simplify(vpa(subs(expr,vars,extractVars(q))));
+            else
+                if iscell(input)
+                    func = matlabFunction(expr,'Vars',input);
+                else
+                    func = matlabFunction(expr,'Vars',{input});
+                end
+            end
+        end
     end
     
     methods (Static,Access=private)
@@ -125,7 +161,7 @@ classdef H_Trans
         end
         
         function M = single( input_args )
-        M=eye(4);
+        M=sym(eye(4));
             if isequal(size(input_args),[4,4]),
                 M = input_args;
 			elseif isequal(size(input_args),[3,3]),
