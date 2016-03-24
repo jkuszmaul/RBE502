@@ -86,7 +86,11 @@ classdef Kin_Model
                 case 2
                     value=obj.inv_J0_func(q);
                 case 3
-                    value=obj.inv_JLambda_func(q,lambda);
+                    if lamda<=0
+                        value=obj.inv_J0_func(q);
+                    else
+                        value=obj.inv_JLambda_func(q,lambda);
+                    end
             end
         end
         
@@ -119,9 +123,9 @@ classdef Kin_Model
                 obj.T_matrices{i,i+1}=H_Trans.fromDH(DH_Matrix(i,:));
             end
             obj=obj.calculateFromChain();
-            %obj=obj.calculateForwardKinematics();
-            %obj=obj.calculateJacobian();
-            %obj=obj.calculatePesudoInvJacobian();
+            obj=obj.calculateForwardKinematics();
+            obj=obj.calculateJacobian();
+            obj=obj.calculatePesudoInvJacobian();
         end
         
         function obj=fromPrompt()
@@ -218,7 +222,6 @@ classdef Kin_Model
         function obj = calculatePesudoInvJacobian(obj)
             J=obj.J;
 
-            disp('invese');
             lambda_inv_J = J.'/(J*J.' + (obj.sym_lambda^2).*eye(size(J,1)));
             
             obj.inv_JLambda_func = H_Trans.createFunction(lambda_inv_J,{obj.q,sym('lambda')});
