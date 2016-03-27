@@ -1,4 +1,4 @@
-function [ret, sym_theta, plots] = inv_kin()
+function [ret, sym_theta, diff_theta, plots] = inv_kin()
   % Returns the inverse kinematics function handle, which
   % takes an end-effector homogeneous transformation matrix.
   % Return values:
@@ -38,14 +38,67 @@ function [ret, sym_theta, plots] = inv_kin()
   ret = @eval_ret;
   plots = @plotter;
 
-  function best = eval_ret(H_act)
+  t = sym('t');
+  R11(t) = sym('R11(t)');
+  R12(t) = sym('R12(t)');
+  R13(t) = sym('R13(t)');
+  R21(t) = sym('R21(t)');
+  R22(t) = sym('R22(t)');
+  R23(t) = sym('R23(t)');
+  R31(t) = sym('R31(t)');
+  R32(t) = sym('R32(t)');
+  R33(t) = sym('R33(t)');
+  D1(t) = sym('D1(t)');
+  D2(t) = sym('D2(t)');
+  D3(t) = sym('D3(t)');
+  H2 = [R11 R12 R13 D1;
+        R21 R22 R23 D2;
+        R31 R32 R33 D3;
+        0   0   0   1]
+  diff_theta = subs(sym_theta, H, H2);%diff(sym_theta, H);
+
+  deriv = diff_theta;
+  for i = 1:6
+    for j = 1:2
+      tmp(t) = diff_theta(i, j);
+      deriv(i, j) = diff(tmp, t);
+    end
+  end
+
+  Hdot = sym('Hdot', [3 4]);
+  deriv = subs(deriv, diff(R11, t), Hdot(1, 1));
+  deriv = subs(deriv, diff(R12, t), Hdot(1, 2));
+  deriv = subs(deriv, diff(R13, t), Hdot(1, 3));
+  deriv = subs(deriv, diff(R21, t), Hdot(2, 1));
+  deriv = subs(deriv, diff(R22, t), Hdot(2, 2));
+  deriv = subs(deriv, diff(R23, t), Hdot(2, 3));
+  deriv = subs(deriv, diff(R31, t), Hdot(3, 1));
+  deriv = subs(deriv, diff(R32, t), Hdot(3, 2));
+  deriv = subs(deriv, diff(R33, t), Hdot(3, 3));
+  deriv = subs(deriv, diff(D1, t), Hdot(1, 4));
+  deriv = subs(deriv, diff(D2, t), Hdot(2, 4));
+  deriv = subs(deriv, diff(D3, t), Hdot(3, 4));
+  diff_theta = deriv;
+
+  function [best, dtdH] = eval_ret(H_act, H_vel)
+    tic
     angles = eval(subs(sym_theta, H, H_act));
+    % Evaluate derivative:
+    deriv = diff_theta;
+    deriv = subs(deriv, Hdot, H_vel(1:3, 1:4));
+    subs_pos = [R11(t) R12(t) R13(t) D1(t);
+                R21(t) R22(t) R23(t) D2(t);
+                R31(t) R32(t) R33(t) D3(t)];
+    deriv = subs(deriv, subs_pos(1:3, 1:4), H_act(1:3, 1:4));
+    deriv = eval(deriv);
     best = angles(:, 1);
+    dtdH = deriv(:, 1);
     % Now, always choose the values with the smaller absolute value.
     for i = 1:6
       % Only need to change anything if abs(2) < abs(1)
       if abs(angles(i, 2)) < abs(angles(i, 1))
         best(i) = angles(i, 2);
+        dtdH(i) = deriv(i, 2);
       end
     end
   end

@@ -1,4 +1,4 @@
-function ret = kin()
+function ret = kin3()
 pair_separation = 0.1;
 %pair_radius = 3.0;
 base_r = pair_separation; %sqrt(pair_radius^2 + (pair_separation / 2)^2);
@@ -9,7 +9,8 @@ link_length = 1.0;
 elbows = @(t)[elbow_pos(base_r, link_length, 0, t(1));
               elbow_pos(base_r, link_length, 2*pi/3, t(2));
               elbow_pos(base_r, link_length, 4*pi/3, t(3))];
-act_elbows = elbows([1 1 0])
+theta = sym('theta', [1 3]);
+act_elbows = elbows(theta)
 
 pos = sym('pos', [1, 3]);
 pos_all = [pos; pos; pos];
@@ -39,8 +40,8 @@ function constraints = elbow_constraints(elbows, points, link_length)
 end
 
 function pos = elbow_pos(base_r, link_r, base_angle, link_theta)
-  pos = [0 0 0];
-  pos(3) = link_r * sin(link_theta); % z
+  pos = [0 0 link_r * sin(link_theta)];
+  %pos(3) = link_r * sin(link_theta); % z
   horiz_dist = base_r + link_r * cos(link_theta);
   pos(1) = horiz_dist * cos(base_angle);
   pos(2) = horiz_dist * sin(base_angle);
