@@ -1,48 +1,68 @@
-function ret = kin3()
-pair_separation = 0.1;
-%pair_radius = 3.0;
-base_r = pair_separation; %sqrt(pair_radius^2 + (pair_separation / 2)^2);
-%pair_dtheta = atan2(pair_separation / 2, pair_radius);
-pair_dtheta = pi / 6;
-link_length = 1.0;
+function [fun] = kin3()
+  top_r = 1.0;
+  bot_r = 0.1;
+  elbow_len = 1;
+  link_len = 3;
+  fun = @fwd_ret;
+  return
 
-elbows = @(t)[elbow_pos(base_r, link_length, 0, t(1));
-              elbow_pos(base_r, link_length, 2*pi/3, t(2));
-              elbow_pos(base_r, link_length, 4*pi/3, t(3))];
-theta = sym('theta', [1 3]);
-act_elbows = elbows(theta)
+  t = sym('t');
+  pos = sym('pos', [3 1]);
 
-pos = sym('pos', [1, 3]);
-pos_all = [pos; pos; pos];
-eqs = [%0 == reg_tri_constraints(pair_separation, pos);
-       0 == elbow_constraints(act_elbows, pos_all, 4)];
-%solve(eqs)
-%solve(0 == reg_hex_constraints(pair_separation, pos))
-ret = eqs;
+  end_pts = link_ends(pos, bot_r);
 
-end
+  theta = sym('theta', [1, 3]);
 
-function constraints = reg_tri_constraints(side_len, points)
-  constraints = sym('constraints', [3, 1]);
-  con_idx = 1;
-  for i = 1:2
-    for j = i+1:3
-      constraints(con_idx) = sum((points(i, 1:2) - points(j, 1:2)).^2) - side_len^2;
-      %constraints(con_idx+1) = points(i, 3) - points(j, 3);
-      con_idx = con_idx+1;
-    end
+  elbow_pts = start_constraints(top_r, elbow_len, theta);
+  link_cts = simplify(link_constraints(elbow_pts, end_pts, link_len)) == 0
+  st = sym('st', [1 3]);
+  ct = sym('ct', [1 3]);
+  link_cts = subs(link_cts, sin(theta), st);
+  link_cts = subs(link_cts, cos(theta), ct);
+  ret = solve(link_cts, pos(1), pos(2), pos(3));
+  ret = [ret.pos1(2); ret.pos2(2); ret.pos3(2)];
+  %fun = @(th) solve(subs(link_cts, theta, th));
+  %fun = @(th) subs(subs(ret, st, sin(th)), ct, cos(th));
+
+  function i2 = fwd_ret(theta)
+    elbow_pts = start_constraints(top_r - bot_r, elbow_len, theta.');
+    p1 = elbow_pts(1, :).';
+    p2 = elbow_pts(2, :).';
+    p3 = elbow_pts(3, :).';
+    r = link_len;
+    % Faster code for intersecting sphere.
+    p21 = p2-p1;
+    p31 = p3-p1;
+    c = cross(p21,p31);
+    c2 = sum(c.^2);
+    u1 = cross(((sum(p21.^2)+r^2-r^2)*p31 - ...
+      (sum(p31.^2)+r^2-r^2)*p21)/2,c)/c2;
+    v = sqrt(r^2-sum(u1.^2))*c/sqrt(c2);
+    %i1 = p1+u1+v;
+    i2 = p1+u1-v;
   end
 end
 
-function constraints = elbow_constraints(elbows, points, link_length)
-  dist2 = sum((points - elbows).^2, 2); % Compute norm for each difference.
-  constraints = dist2 - link_length^2;
+function pts = link_ends(pos, bot_r)
+  ptx = @(angle) pos(1, 1) + bot_r * cos(angle);
+  pty = @(angle) pos(2, 1) + bot_r * sin(angle);
+  ptz = pos(3);
+  pts = [ptx(0) pty(0) ptz;
+  ptx(2 * pi / 3) pty(2 * pi / 3) ptz;
+  ptx(4 * pi / 3) pty(4 * pi / 3) ptz];
 end
 
-function pos = elbow_pos(base_r, link_r, base_angle, link_theta)
-  pos = [0 0 link_r * sin(link_theta)];
-  %pos(3) = link_r * sin(link_theta); % z
-  horiz_dist = base_r + link_r * cos(link_theta);
-  pos(1) = horiz_dist * cos(base_angle);
-  pos(2) = horiz_dist * sin(base_angle);
+function pts = start_constraints(top_r, elbow_len, theta)
+  rad = @(i) top_r + elbow_len * cos(theta(i));
+  ptx = @(i) cos((i - 1) * 2 * pi / 3) * rad(i);
+  pty = @(i) sin((i - 1) * 2 * pi / 3) * rad(i);
+  ptz = @(i) sin(theta(i));
+  pts = [ptx(1) pty(1) ptz(1);
+  ptx(2) pty(2) ptz(2);
+  ptx(3) pty(3) ptz(3)];
+end
+
+function cts = link_constraints(elbow_pts, end_pts, link_len)
+  dist2 = sum((elbow_pts - end_pts).^2, 2);
+  cts = dist2 - link_len^2;
 end

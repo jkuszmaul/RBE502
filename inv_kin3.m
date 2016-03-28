@@ -1,31 +1,33 @@
-function [ret, sym_theta, diff_theta, plots] = inv_kin3()
+function [inv_kin, sym_theta, diff_theta, plots] = inv_kin3()
   top_r = 1.0;
   bot_r = 0.1;
   elbow_len = 1;
   link_len = 3;
 
   t = sym('t');
-  goal = sym('goal', [3 1]);
+  p = sym('p', [3 1]);
 
-  end_pts = link_ends(goal, bot_r);
+  end_pts = link_ends(p, bot_r);
 
-  theta = sym('theta', [1, 3]);
-  sym(theta, 'real');
+  th = sym('th', [1, 3]);
+  sym(th, 'real');
 
-  elbow_pts = start_constraints(top_r, elbow_len, theta);
+  elbow_pts = start_constraints(top_r, elbow_len, th);
   link_cts = simplify(link_constraints(elbow_pts, end_pts, link_len)) == 0;
-  sym_theta = sym('sym_theta', [3 2]);
+  %kin = solve(link_cts, p(1), p(2), p(3));
+  %kin = [kin.p1(2); kin.p2(2); kin.p3(2)];
+  sym_th = sym('sym_th', [3 2]);
   for i = 1:3
     i
-    res = solve(link_cts(i), theta(i), 'Real', 1);
-    sym_theta(i, 1:2) = res.';
+    res = solve(link_cts(i), th(i), 'Real', 1);
+    sym_th(i, 1:2) = res.';
   end
 
   P1(t) = sym('P1(t)');
   P2(t) = sym('P2(t)');
   P3(t) = sym('P3(t)');
   post = [P1(t); P2(t); P3(t)];
-  t2 = subs(sym_theta, goal, post);
+  t2 = subs(sym_th, p, post);
   diff_theta = t2;
   for i = 1:3
     for j = 1:2
@@ -36,18 +38,20 @@ function [ret, sym_theta, diff_theta, plots] = inv_kin3()
   diff_theta = subs(diff_theta, diff(P1(t), t), sym_vel(1, 1));
   diff_theta = subs(diff_theta, diff(P2(t), t), sym_vel(2, 1));
   diff_theta = subs(diff_theta, diff(P3(t), t), sym_vel(3, 1));
-  diff_theta = subs(diff_theta, P1(t), goal(1));
-  diff_theta = subs(diff_theta, P2(t), goal(2));
-  diff_theta = subs(diff_theta, P3(t), goal(3));
+  diff_theta = subs(diff_theta, P1(t), p(1));
+  diff_theta = subs(diff_theta, P2(t), p(2));
+  diff_theta = subs(diff_theta, P3(t), p(3));
 
   plots = @plotter;
-  ret = @eval_ret;
+  inv_kin = @eval_ret;
+
+  %fwd_kin = @(thetas) subs(kin, th, thetas.');
 
   function [best, dt] = eval_ret(pos_act, vel_act)
-    angles = eval(subs(sym_theta, goal, pos_act));
+    angles = eval(subs(sym_th, p, pos_act));
     % Evaluate derivative:
     deriv = diff_theta;
-    deriv = subs(deriv, goal, pos_act);
+    deriv = subs(deriv, p, pos_act);
     deriv = simplify(subs(deriv, sym_vel, vel_act));
     deriv = eval(deriv);
     best = angles(:, 1);
@@ -65,8 +69,8 @@ function [ret, sym_theta, diff_theta, plots] = inv_kin3()
   function plotter(pos_act)
     joints = eval_ret(pos_act, [0 0 0]');
     % Do plotting.
-    eval_elb = subs(elbow_pts, theta, joints.');
-    eval_end = subs(end_pts, goal, pos_act);
+    eval_elb = subs(elbow_pts, th, joints.');
+    eval_end = subs(end_pts, p, pos_act);
     % Get locations of motor joints.
     base_hex = link_ends([0 0 0]', top_r);
     new_plot = zeros(3 * 3, 3);
@@ -84,10 +88,10 @@ function [ret, sym_theta, diff_theta, plots] = inv_kin3()
   end
 end
 
-function pts = link_ends(goal, bot_r)
-  ptx = @(angle) goal(1, 1) + bot_r * cos(angle);
-  pty = @(angle) goal(2, 1) + bot_r * sin(angle);
-  ptz = goal(3);
+function pts = link_ends(p, bot_r)
+  ptx = @(angle) p(1, 1) + bot_r * cos(angle);
+  pty = @(angle) p(2, 1) + bot_r * sin(angle);
+  ptz = p(3);
   pts = [ptx(0) pty(0) ptz;
          ptx(2 * pi / 3) pty(2 * pi / 3) ptz;
          ptx(4 * pi / 3) pty(4 * pi / 3) ptz];

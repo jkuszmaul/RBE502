@@ -8,9 +8,7 @@ function [dyn, inv_dyn] = get_dyn()
   inv_vel = inv_vel(:, 1);
   t = sym('t');
   goal = sym('goal', [3 1]);
-  sym(goal, 'real');
   sym_vel = sym('sym_vel', [3 1]);
-  sym(sym_vel, 'real');
   p1(t) = sym('p1(t)');
   p2(t) = sym('p2(t)');
   p3(t) = sym('p3(t)');
@@ -33,7 +31,6 @@ function [dyn, inv_dyn] = get_dyn()
   tau = subs(dLdp, goal, p) - diff(subs(dLdv, sym_vel, v), t);
   tau = tau.';
   atmp = sym('atmp', [3 1]);
-  sym(atmp, 'real');
   %dtau = jacobian(subs(tau, diff(v, t), atmp), atmp);
   %dtau = subs(tau, a, atmp);
   %dtau = subs(dtau, v, sym_vel);
