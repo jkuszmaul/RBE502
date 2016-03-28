@@ -34,10 +34,12 @@ q_d = [0.2;sin(2*t)];
 Kp=10*ones(size(q_d));
 Kv=10*ones(size(q_d));
 
+c=Controller.ComputedTorque(model,Kp,Kv);
+
 x0=[[-0.5;0.2],[0.1;0.1]];
 options = odeset('RelTol',1e-4,'AbsTol',[1e-4, 1e-4, 1e-4, 1e-4]);
 
-[ode,getTorques]=ModelODE(model,q_d,'ComputedTorque',{model,Kp,Kv});
+[ode,getTorques]=ModelODE(model,q_d,c);
 
 disp('Beginning Simulation');
 
