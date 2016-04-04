@@ -10,5 +10,4 @@ function [poses, vels] = run_sim(pi, vi, traj, control, noise, dt, num_iter)
     taus(:, i-1) = tau;
     [poses(:, i), vels(:, i)] = sim_step(pos, vel, tau, dt, noise);
   end
-  taus
 end

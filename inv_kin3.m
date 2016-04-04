@@ -1,4 +1,4 @@
-function [inv_kin, sym_theta, diff_theta, plots] = inv_kin3()
+function [inv_kin, sym_th, diff_theta, plots] = inv_kin3()
   top_r = 1.0;
   bot_r = 0.1;
   elbow_len = 1;
