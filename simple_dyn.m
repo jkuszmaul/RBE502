@@ -17,7 +17,6 @@ function [dyn, inv_dyn] = simple_dyn()
   I = control_mass * control_radius^2;
   B = 0.1; % Friction.
   g = 9.8;
-  dyn = @(x, y, z) x + y + z;
   inv_dyn = @(pos, vel, accel) I * accel + B * vel + control_mass * g * control_radius * sin(pos);
   dyn = @(pos, vel, tau) (tau - B * vel - control_mass * g * control_radius * sin(pos)) / I;
 end
