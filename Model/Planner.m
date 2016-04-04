@@ -11,8 +11,8 @@ classdef Planner
     methods(Static)
         function d_func = fromSym(sym_q,sym_t)
             if nargin<2
-                sym_t=symvar(sym_q);
-                if size(sym_t,1)>0
+                temp=symvar(sym_q);
+                if size(temp,1)>0
                     sym_t=sym_t(1);
                 else
                     sym_t=sym('t',real);
@@ -81,7 +81,7 @@ classdef Planner
             tc = -(qi - qf + (vel.^2 - vf.^2)./(2*acc) + (vel.^2 - vi.^2)./(2*acc))./vel;
             
             if tc<0
-                vel=dir*abs((2^(1/2)*(vf^2 + vi^2 + 2*acc*qf - 2*acc*qi).^(1/2))/2);
+                vel=dir.*abs((2^(1/2)*(vf.^2 + vi.^2 + 2.*acc.*qf - 2.*acc.*qi).^(1/2))/2);
                 tc=0;
             end
             

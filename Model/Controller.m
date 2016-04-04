@@ -7,6 +7,28 @@ classdef Controller
 %       function tau = c_func(desired,actual,...)
 
     methods(Static)
+        function tau = ComputedTorqueF(inv_dyn_func,Kp,Kv)
+
+            tau = @ComputedTorque;
+
+            function tau = ComputedTorque(desired,actual)
+                desired=reshape(desired,[],3);
+                actual=reshape(actual,[],2);
+                
+                q=actual(:,1);
+                d_q=actual(:,2);
+
+                q_d=desired(:,1);
+                d_q_d=desired(:,2);
+                dd_q_d=desired(:,3);
+
+                e1=q-q_d;
+                e2=d_q-d_q_d;
+
+                tau=inv_dyn_func(q,d_q,dd_q_d-Kp.*e1-Kv.*e2);
+            end
+        end
+        
         function tau = ComputedTorque(model,Kp,Kv)
 
             if nargin<2 || isempty(Kp)
