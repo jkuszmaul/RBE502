@@ -10,8 +10,8 @@ x0=zeros(6,2);
 
 t=sym('t','real');
 %p=Planner.fromSym(0.4*ones(6,1),t);
-%p=Planner.fromSym(sin(t)*ones(6,1));
-p=Planner.trapezoid(x0,[0.4*ones(6,1),zeros(6,1)],1,1);
+p=Planner.fromSym(sin(t)*ones(6,1));
+%p=Planner.trapezoid(x0,[0.4*ones(6,1),zeros(6,1)],1,1);
 
 %% Control
 % c: tau=@(desired,actual)
