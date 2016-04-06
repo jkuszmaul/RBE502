@@ -36,7 +36,7 @@ plan2=Planner.trapezoid(x0(2,:),[q_d(2),0],1,1);
 plan3=Planner.fromSym(q_d(3));
 plan=Planner.join({plan1,plan2,plan3});
 
-control=Controller.ComputedTorque(model,Kp,Kv);
+control=Controller.ComputedTorque(@model.inverse_dyn,Kp,Kv);
 noise=@(a,t)0.02*randn(size(a));
 
 options = odeset('RelTol',1e-4,'AbsTol',1e-4.*ones(numel(model.q)*2,1));
