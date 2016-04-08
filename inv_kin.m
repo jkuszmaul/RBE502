@@ -1,4 +1,4 @@
-function [ret, sym_theta, diff_theta, plots] = inv_kin()
+function [ret, sym_theta, diff_theta, plots,sym_H] = inv_kin()
   % Returns the inverse kinematics function handle, which
   % takes an end-effector homogeneous transformation matrix.
   % Return values:
@@ -11,6 +11,7 @@ function [ret, sym_theta, diff_theta, plots] = inv_kin()
   %       of joint variables and plots the arm.
   ret = 0;
   H = sym('H', [4, 4]);
+  sym_H=H;
   H(4, :) = [0 0 0 1];
 
   % Various Parameters.

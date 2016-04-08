@@ -10,6 +10,11 @@ classdef H_Trans
         Trans
         Rot
         Euler   %ZYX Euler Angles
+        Wrench
+    end
+    
+    properties (Access=private)
+        sym_Euler
     end
     
     methods
@@ -26,6 +31,7 @@ classdef H_Trans
         
         function obj = set.Rot(obj,value)
             obj.H(1:3,1:3) = value(1:3,1:3);
+            obj.sym_Euler=[];
         end
         function value = get.Rot(obj)
             value = obj.H(1:3,1:3);
@@ -41,12 +47,37 @@ classdef H_Trans
 		function obj = set.Euler(obj,value)
             T=(H_Trans.rotZ(value(3))*H_Trans.rotY(value(2))*H_Trans.rotX(value(1)));
             obj.Rot=T.Rot;
+            obj.sym_Euler=value;
         end
         function value = get.Euler(obj)
-            R=obj.Rot;
-            value=[atan2(R(3,2),R(3,3));
-                   atan2(-R(1,3),sqrt(R(3,2)^2+R(3,3)^2));
-                   atan2(R(2,1),R(1,1))];
+            if isempty(obj.sym_Euler)
+                R=obj.Rot;
+                value=[atan2(R(3,2),R(3,3));
+                       atan2(-R(1,3),sqrt(R(3,2)^2+R(3,3)^2));
+                       atan2(R(2,1),R(1,1))];
+                value=simplify(value);
+            else
+                value=obj.sym_Euler;
+            end
+            
+%             v1=simplify(R(3,2)/R(3,3));
+%             [n1,d1]=numden(v1);
+%             
+%             v2=simplify(R(2,1)/R(1,1));
+%             [n2,d2]=numden(v2);
+%             
+%             value=[atan2(n1,d1);
+%                    asin(-R(3,1));
+%                    atan2(n2,d2)];
+             
+        end
+        
+        function obj = set.Wrench(obj,value)
+            obj.Trans=value(1:3);
+            obj.Euler=value(4:6);
+        end
+        function value = get.Wrench(obj)
+            value=[obj.Trans;obj.Euler];
         end
         
         function value = getRotVel(obj,var)
@@ -54,12 +85,72 @@ classdef H_Trans
            value=[w(3,2);w(1,3);w(2,1)];
         end
 		
+        function [Jg,Ja] = getJacobians(obj,q)
+            Jg= sym(zeros(6,size(q,1)));
+            Ja= Jg;
+            w=obj.Wrench;
+            for i=1:size(q,1)
+                v=diff(w(1:3),q(i));
+                Jg(1:3,i) = v ;
+                Ja(1:3,i) = v ;
+                Jg(4:6,i) = obj.getRotVel(q(i));
+                Ja(4:6,i) = diff(w(4:6),q(i));
+            end 
+            Jg=simplify(Jg);
+            Ja=simplify(Ja);
+        end
+        
         function value = getJacobian(obj,q)
             value = sym(zeros(6,size(q,1)));
             for i=1:size(q,1)
-                value(1:3,i) = simplify(diff(obj.Trans,q(i)));
-                value(4:6,i) = simplify(obj.getRotVel(q(i)));
+                value(1:3,i) = diff(obj.Trans,q(i));
+                value(4:6,i) = obj.getRotVel(q(i));
             end 
+            value=simplify(value);
+        end
+        
+        function Jg = JaToJg(obj,Ja)
+            t1=sym('t1','real');
+            t2=sym('t2','real');
+            t3=sym('t3','real');
+            H_=H_Trans();
+            H_.Euler=[t1;t2;t3];
+            
+            T_=[H_.getRotVel(t3),...
+                H_.getRotVel(t2),...
+                H_.getRotVel(t1)];
+            
+            T=subs(T_,[t1;t2;t3],obj.Euler);
+            
+            Ta=[eye(3),zeros(3);zeros(3),T];
+            
+            Jg=Ta*Ja;
+        end
+        function Ja = JgToJa(obj,Jg)
+            t1=sym('t1','real');
+            t2=sym('t2','real');
+            t3=sym('t3','real');
+            H_=H_Trans();
+            H_.Euler=[t1;t2;t3];
+            
+            T_=[H_.getRotVel(t3),...
+                H_.getRotVel(t2),...
+                H_.getRotVel(t1)];
+            
+            T=subs(T_,[t1;t2;t3],obj.Euler);
+            
+            Ta=[eye(3),zeros(3);zeros(3),T];
+            
+            Ja=Ta\Jg;
+        end
+        
+        function value = getAnalyticJacobian(obj,q)
+            w=obj.Wrench;
+            value = sym(zeros(6,size(q,1)));
+            for i=1:size(q,1)
+                value(1:6,i) = diff(w,q(i));
+            end 
+            value=simplify(value);
         end
         
         function func = getFunction(obj,input)

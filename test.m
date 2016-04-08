@@ -1,4 +1,7 @@
-clear all; close all; clc;
+% clear all; close all; clc;
+
+%% Kinematics
+[ret, sym_theta, diff_theta, plots,H] = inv_kin();
 
 %% Dynamics
 [dyn,inv_dyn]=simple_dyn();
@@ -10,8 +13,15 @@ x0=zeros(6,2);
 
 t=sym('t','real');
 %p=Planner.fromSym(0.4*ones(6,1),t);
-p=Planner.fromSym(sin(t)*ones(6,1));
+%p=Planner.fromSym(sin(t)*ones(6,1));
 %p=Planner.trapezoid(x0,[0.4*ones(6,1),zeros(6,1)],1,1);
+
+sym_d=[ 1   0   0   0
+        0   1   0   0
+        0   0   1   0.3+t/10
+        0   0   0   1];
+d_work=Planner.fromSym(reshape(sym_d,[],1));
+p=Planner.toJointSpace(d_work,sym_theta,H,0,0.01,5);
 
 %% Control
 % c: tau=@(desired,actual)
