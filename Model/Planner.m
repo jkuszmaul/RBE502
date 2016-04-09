@@ -44,6 +44,27 @@ classdef Planner
             end
         end
         
+        function d_func = spline(desired_list,t_range)
+            n=numel(desired_list);
+            sz=size(desired_list{1});
+            funcs=cell(sz(1),1);
+%             t_range=t0:step:n*step;
+            
+            for q_i=1:sz(1)
+                q_d=zeros(n,1);
+                vi=desired_list{1}(q_i,2);
+                for i=1:n
+                    q_d(i)=desired_list{i}(q_i,1);
+                end
+                vf=desired_list{n}(q_i,2);
+                
+                pp=spline(t_range,[vi;q_d;vf]);
+                funcs{q_d}=@(t)ppval(pp,t);
+            end
+            
+            d_func = Planner.join(funcs);
+        end
+        
         function [d_func, sym_a] = trajectory(final, initial, tf, t0)
             if nargin<4 || isempty(t0)
                 t0=0;
