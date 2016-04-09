@@ -52,17 +52,36 @@ classdef Planner
             
             for q_i=1:sz(1)
                 q_d=zeros(n,1);
-                vi=desired_list{1}(q_i,2);
+                
                 for i=1:n
                     q_d(i)=desired_list{i}(q_i,1);
                 end
-                vf=desired_list{n}(q_i,2);
+                
+                if size(desired_list{1},2)>1
+                    vi=desired_list{1}(q_i,2);
+                else
+                    vi=0;
+                end
+                
+                if size(desired_list{n},2)>1
+                    vf=desired_list{n}(q_i,2);
+                else
+                    vf=0;
+                end
                 
                 pp=spline(t_range,[vi;q_d;vf]);
-                funcs{q_d}=@(t)ppval(pp,t);
+                d_pp=deriv_pp(pp);
+                dd_pp=deriv_pp(d_pp);
+                funcs{q_i}=@(t)[ppval(pp,t),ppval(d_pp,t),ppval(dd_pp,t)];
             end
             
             d_func = Planner.join(funcs);
+            
+            function d_pp=deriv_pp(pp)
+                [breaks,coefs,l,k,d] = unmkpp(pp);
+                % make the polynomial that describes the derivative
+                d_pp = mkpp(breaks,repmat(k-1:-1:1,d*l,1).*coefs(:,1:k-1),d);
+            end
         end
         
         function [d_func, sym_a] = trajectory(final, initial, tf, t0)
@@ -186,28 +205,37 @@ classdef Planner
             end
         end
         
-        function d_func = toJointSpace(d_func,equ_q,vars,t0,t_step,tf)
-            equ_q=reshape(equ_q,[],1);
+        function d_func = toJointSpace(d_func,equ_q,vars,t_range)
+            equ_q=equ_q(:,1);
             vars=reshape(vars,[],1);
             
-            map_func=makeMap;
+            map_pos=mapPos;
+            map_vel=mapVel;
             
-            t_range=t0:t_step:tf;
+%             t_range=t0:t_step:tf;
             n=numel(t_range);
             desired=cell(n,1);
             for i=1:n
                 workspace_d=d_func(t_range(i));
-                desired{i}=map_func(workspace_d);
+                desired{i}=map_pos(workspace_d(:,1));
+                if i==1||i==n
+                    desired{i}=[desired{i},map_vel(workspace_d(:,1:2))];
+                end
             end
             
-            d_func=Planner.fromList(desired,t0,t_step);
+            d_func=Planner.spline(desired,t_range);
             
-            function func = makeMap
+            function func = mapPos
                 sym_q=equ_q;
-                [sym_d_q,d_vars,dd_vars]=Planner.diffT(sym_q,vars);
-                [sym_dd_q,~,~]=Planner.diffT(sym_d_q,vars);
                 
-                func=matlabFunction([sym_q,sym_d_q,sym_dd_q],'Vars',{[vars,d_vars,dd_vars]});
+                func=matlabFunction(sym_q,'Vars',{vars});
+            end
+            function func = mapVel
+                sym_q=equ_q;
+                [sym_d_q,d_vars,~]=Planner.diffT(sym_q,vars);
+%                 [sym_dd_q,~,~]=Planner.diffT(sym_d_q,vars);
+                
+                func=matlabFunction(sym_d_q,'Vars',{[vars,d_vars]});
             end
         end
         

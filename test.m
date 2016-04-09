@@ -21,7 +21,7 @@ sym_d=[ 1   0   0   0
         0   0   1   0.3+t/10
         0   0   0   1];
 d_work=Planner.fromSym(reshape(sym_d,[],1));
-p=Planner.toJointSpace(d_work,sym_theta,H,0,0.01,5);
+p=Planner.toJointSpace(d_work,sym_theta,H,0:0.01:5);
 
 %% Control
 % c: tau=@(desired,actual)
