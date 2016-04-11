@@ -2,7 +2,7 @@
 close all;
 
 %% Kinematics
-[ret, sym_theta, diff_theta, plots,H] = inv_kin();
+% [ret, sym_theta, diff_theta, plots,H] = inv_kin();
 
 %% Dynamics
 [dyn,inv_dyn]=simple_dyn();
@@ -17,12 +17,12 @@ t=sym('t','real');
 p=Planner.fromSym(sin(t)*ones(6,1));
 %p=Planner.trapezoid(x0,[0.4*ones(6,1),zeros(6,1)],1,1);
 
-%sym_d=[ 1   0   0   0
+% sym_d=[ 1   0   0   0
 %        0   1   0   0
 %        0   0   1   -0.3+t/10
 %        0   0   0   1];
-%d_work=Planner.fromSym(reshape(sym_d,[],1));
-%p=Planner.toJointSpace(d_work,sym_theta,H,0:0.01:5);
+% d_work=Planner.fromSym(reshape(sym_d,[],1));
+% p=Planner.toJointSpace(d_work,sym_theta,H,0:0.01:5);
 
 %% Control
 % c: tau=@(desired,actual)
@@ -56,13 +56,17 @@ c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
 
 %% Visualization
 
-traj_pos = [];
-traj_vel = [];
-for i = t_span
-  traj = p(i);
-  traj_pos(:, end+1) = traj(:, 1);
-  traj_vel(:, end+1) = traj(:, 2);
-end
+traj=evalf(p,t_span.');
+traj_pos=traj(:,:,1);
+traj_vel=traj(:,:,2);
+
+% traj_pos = [];
+% traj_vel = [];
+% for i = t_span
+%   traj = p(i);
+%   traj_pos(:, end+1) = traj(:, 1);
+%   traj_vel(:, end+1) = traj(:, 2);
+% end
 
 plot(t_span,pos, t_span, traj_pos);
 title('Positiion and Adaptive Control');

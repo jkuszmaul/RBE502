@@ -46,9 +46,11 @@ classdef Controller
                 tau=inv_dyn_func(q,d_q,dd_q_d);
                 Y = [tau ones(size(tau))];
                 sigma = ev + delta * ep;
+                
+                pihatdot = Kpi * transpose(Y) * sigma;
+                pihat = pihat + pihatdot * dt;
+                
                 u = Y * pihat + Kd * sigma;
-                pihatdot = Kpi * transpose(Y) * sigma
-                pihat = pihat + pihatdot * dt
             end
         end
 
