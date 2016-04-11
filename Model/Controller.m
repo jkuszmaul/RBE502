@@ -2,7 +2,7 @@ classdef Controller
 % Controller allows access to various control methods
 %   Each static function in the class should have the following format:
 %       function c_func = XXXXXX(args)
-%   
+%
 %   c_func should be an anonymous function of the form:
 %       function tau = c_func(desired,actual,...)
 
@@ -14,7 +14,7 @@ classdef Controller
             function tau = ComputedTorque(desired,actual)
                 desired=reshape(desired,[],3);
                 actual=reshape(actual,[],2);
-                
+
                 [q,d_q]=Controller.interpretInput(actual);
                 [q_d,d_q_d,dd_q_d]=Controller.interpretInput(desired);
 
@@ -22,6 +22,33 @@ classdef Controller
                 ev=d_q_d-d_q;
 
                 tau=inv_dyn_func(q,d_q,dd_q_d+Kp.*ep+Kv.*ev);
+            end
+        end
+
+        function tau = AdaptiveSimple(inv_dyn_func,Kd,delta,Kpi, dt)
+        % Operate on the assumption that the "true" model will be a linear
+        % function of our estimated model.
+        % Done per 8.5.4 "Adaptive Control" from
+        % Robotics Modelling, Planning, and Control.
+
+            tau = @Adaptive;
+            persistent pihat
+            pihat = [1; 0];
+
+            function u = Adaptive(desired,actual)
+                actual=reshape(actual,[],2);
+                [q,d_q]=Controller.interpretInput(actual);
+                [q_d,d_q_d,dd_q_d]=Controller.interpretInput(desired);
+
+                ep=q_d-q;
+                ev=d_q_d-d_q;
+
+                tau=inv_dyn_func(q,d_q,dd_q_d);
+                Y = [tau ones(size(tau))];
+                sigma = ev + delta * ep;
+                u = Y * pihat + Kd * sigma;
+                pihatdot = Kpi * transpose(Y) * sigma
+                pihat = pihat + pihatdot * dt
             end
         end
 
@@ -36,13 +63,13 @@ classdef Controller
 
                 ep=q_d-q;
                 ev=d_q_d-d_q;
-                
+
                 sum=sum+ep;
 
                 tau=Kp.*ep+Kd.*ev+Ki.*sum;
             end
         end
-        
+
         function tau = PI(Kp,Ki)
 
             sum=zeros(size(Kp));
@@ -53,13 +80,13 @@ classdef Controller
                 [q_d]=Controller.interpretInput(desired);
 
                 ep=q_d-q;
-                
+
                 sum=sum+ep;
 
                 tau=Kp.*ep+Ki.*sum;
             end
         end
-        
+
         function tau = PD(Kp,Kd)
 
             tau = @PD;
@@ -88,7 +115,7 @@ classdef Controller
                 tau=Kp.*ep;
             end
         end
-        
+
         function tau = I(Ki)
 
             sum=zeros(size(Kp));
@@ -105,19 +132,19 @@ classdef Controller
             end
         end
     end
-    
+
     methods(Static, Access=private)
         function [q,d_q,dd_q] = interpretInput(input)
             sz=size(input);
-            
+
             q=input(:,1);
-            
+
             if sz(2)>1
                 d_q=input(:,2);
             else
                 d_q=zeros(size(q));
             end
-            
+
             if sz(2)>2
                 dd_q=input(:,3);
             else
