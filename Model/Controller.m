@@ -21,7 +21,49 @@ classdef Controller
                 ep=q_d-q;
                 ev=d_q_d-d_q;
 
-                tau=inv_dyn_func(q,d_q,dd_q_d+Kp.*ep+Kv.*ev);
+                tau=inv_dyn_func(q,d_q,dd_q_d+Kp*ep+Kv*ev);
+            end
+        end
+       
+        function tau = RobustComputedTorque(K,Lambd)
+            
+            tau = @RobustComputedTorque;
+            
+            function tau = RobustComputedTorque(desired,actual)
+                desired=reshape(desired,[],3);
+                actual=reshape(actual,[],2);
+                m = 0.15; r = 0.15; g = 9.8;
+                % the nominal parameter vector b0 is
+                
+                %K= 0.5*eye(6);
+                %Lambda= 0.8*eye(6);
+                B = 0.1;
+                I = m*r^2;
+                G = m*g*r;
+                b0 = [ I;B;G ];
+                
+                [q,d_q]=Controller.interpretInput(actual);
+                [q_d,d_q_d,dd_q_d]=Controller.interpretInput(desired);
+                
+               % ep=q_d-q;
+               % ev=d_q_d-d_q;
+                
+               ep=q-q_d;
+               ev=d_q-d_q_d;
+                
+                
+                r = ev + Lambd*ep;
+                v = d_q_d - Lambd*ep;
+                a = dd_q_d - Lambd*ev;
+                Y2= [ a(1), v(1), sin(q(1)); a(2), v(2), sin(q(2)); a(3), v(3), sin(q(3)) ; a(4), v(4), sin(q(4)); a(5), v(5), sin(q(5)); a(6), v(6), sin(q(6))];
+                epsilon=0.001;
+                rho = .04; % see eq(27) in the paper.
+                if norm(Y2'*r) > epsilon
+                    u = -rho* Y2'*r/norm(Y2'*r)
+                else
+                    u= - rho* Y2'*r/epsilon;
+                end
+                tau = Y2*(b0 + u)- K*r;
             end
         end
 

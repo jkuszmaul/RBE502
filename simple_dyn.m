@@ -9,8 +9,8 @@
 % p1 = p + v * dt + 0.5 * a * dt^2;
 % v1 = v + a * dt;
 function [dyn, inv_dyn] = simple_dyn()
-  control_mass = 0.2;
-  control_radius = 0.2; % The distance the mass is from the center.
+  control_mass = 0.15;
+  control_radius = 0.15; % The distance the mass is from the center.
   %[ret_func ,inv_kin, fwd_kin, inv_vel] = inv_kin3();
   % We just treat each control arm as an independent joint.
   % As such, the dynamics are equivalent to that of a 1-link arm.
