@@ -2,7 +2,7 @@
 close all;
 
 %% Kinematics
-% [ret, sym_theta, diff_theta, plots,H] = inv_kin();
+%[ret, sym_theta, diff_theta, plots,H] = inv_kin();
 
 %% Dynamics
 [dyn,inv_dyn]=simple_dyn();
