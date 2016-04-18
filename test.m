@@ -73,7 +73,7 @@ traj_vel=traj(:,:,2);
 % end
 
 plot(t_span,pos, t_span, traj_pos);
-title('Positiion and Robust Control');
+title('Position and Robust Control');
 figure
 plot(t_span,vel, t_span, traj_vel);
 title('Velocity and Robust Control');
