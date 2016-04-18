@@ -156,8 +156,8 @@ classdef Controller
             tau = @P;
 
             function tau = P(desired,actual)
-                [q]=Controller.interpretInput(actual);
-                [q_d]=Controller.interpretInput(desired);
+                [q,~]=Controller.interpretInput(actual);
+                [q_d,~,~]=Controller.interpretInput(desired);
 
                 ep=q_d-q;
 
@@ -167,12 +167,12 @@ classdef Controller
 
         function tau = I(Ki)
 
-            sum=zeros(size(Kp));
+            sum=zeros(size(Ki));
             tau = @I;
 
             function tau = I(desired,actual)
-                [q]=Controller.interpretInput(actual);
-                [q_d]=Controller.interpretInput(desired);
+                [q,~]=Controller.interpretInput(actual);
+                [q_d,~,~]=Controller.interpretInput(desired);
 
                 ep=q_d-q;
                 sum=sum+ep;
