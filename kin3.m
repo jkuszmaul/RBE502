@@ -1,28 +1,17 @@
-function [fun] = kin3()
+% fun: A forward kinematics functoins.
+% jacfun: A function for computing the jacobian.
+% Both functions take a vector of 3 joint angles and return something.
+% fun Returns a [x;y;z] vector for position; jacfun returns a 3x3
+% jacobian for computing x, y, and z velocities.
+function [fun, jacfun] = kin3()
   top_r = 1.0;
   bot_r = 0.1;
   elbow_len = 1;
   link_len = 3;
   fun = @fwd_ret;
-  return
-
-  t = sym('t');
-  pos = sym('pos', [3 1]);
-
-  end_pts = link_ends(pos, bot_r);
-
-  theta = sym('theta', [1, 3]);
-
-  elbow_pts = start_constraints(top_r, elbow_len, theta);
-  link_cts = simplify(link_constraints(elbow_pts, end_pts, link_len)) == 0
-  st = sym('st', [1 3]);
-  ct = sym('ct', [1 3]);
-  link_cts = subs(link_cts, sin(theta), st);
-  link_cts = subs(link_cts, cos(theta), ct);
-  ret = solve(link_cts, pos(1), pos(2), pos(3));
-  ret = [ret.pos1(2); ret.pos2(2); ret.pos3(2)];
-  %fun = @(th) solve(subs(link_cts, theta, th));
-  %fun = @(th) subs(subs(ret, st, sin(th)), ct, cos(th));
+  th = sym('th', [3 1]);
+  jac = jacobian(fun(th), th);
+  jacfun = matlabFunction(jac, 'Vars', {th});
 
   function i2 = fwd_ret(theta)
     elbow_pts = start_constraints(top_r - bot_r, elbow_len, theta.');
