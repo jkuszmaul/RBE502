@@ -56,17 +56,26 @@ function [ret, sym_theta, diff_theta, plots,sym_H] = inv_kin()
         R21 R22 R23 D2;
         R31 R32 R33 D3;
         0   0   0   1]
+  diff_theta = 0;
   diff_theta = subs(sym_theta, H, H2);%diff(sym_theta, H);
 
   deriv = diff_theta;
   for i = 1:6
+    i
     for j = 1:2
       tmp(t) = diff_theta(i, j);
       deriv(i, j) = diff(tmp, t);
     end
   end
 
+
+  subs_pos = [R11(t) R12(t) R13(t) D1(t);
+              R21(t) R22(t) R23(t) D2(t);
+              R31(t) R32(t) R33(t) D3(t)];
+
+  % subs_pos has functions, not variables.
   Hdot = sym('Hdot', [3 4]);
+
   deriv = subs(deriv, diff(R11, t), Hdot(1, 1));
   deriv = subs(deriv, diff(R12, t), Hdot(1, 2));
   deriv = subs(deriv, diff(R13, t), Hdot(1, 3));
@@ -79,17 +88,19 @@ function [ret, sym_theta, diff_theta, plots,sym_H] = inv_kin()
   deriv = subs(deriv, diff(D1, t), Hdot(1, 4));
   deriv = subs(deriv, diff(D2, t), Hdot(2, 4));
   deriv = subs(deriv, diff(D3, t), Hdot(3, 4));
-  diff_theta = deriv;
+  diff_theta = subs(deriv, subs_pos, H(1:3, 1:4));
+
+  % These take a LONG time to run; try to avoid running them.
+  %sym_theta_fun = matlabFunction(sym_theta, 'Vars', {H(1:3, 1:4)}, 'file', 'ik6_gen.m');
+  %disp 'Done 1!'
+  %diff_theta_fun = matlabFunction(diff_theta, 'Vars', {H(1:3, 1:4), Hdot}, 'file', 'ivk6_gen.m');
+  %disp 'Done 2!'
 
   function [best, dtdH] = eval_ret(H_act, H_vel)
-    tic
     angles = eval(subs(sym_theta, H, H_act));
     % Evaluate derivative:
     deriv = diff_theta;
     deriv = subs(deriv, Hdot, H_vel(1:3, 1:4));
-    subs_pos = [R11(t) R12(t) R13(t) D1(t);
-                R21(t) R22(t) R23(t) D2(t);
-                R31(t) R32(t) R33(t) D3(t)];
     deriv = subs(deriv, subs_pos(1:3, 1:4), H_act(1:3, 1:4));
     deriv = eval(deriv);
     best = angles(:, 1);
@@ -104,7 +115,7 @@ function [ret, sym_theta, diff_theta, plots,sym_H] = inv_kin()
     end
   end
 
-  function plotter(H_act, joints)
+  function [xdata, ydata, zdata, xhex, yhex, zhex] = plotter(H_act, joints)
     % Do plotting.
     eval_elb = subs(elbow_pts, theta, joints');
     eval_hex = subs(subs(hex_pts, theta, joints'), H, H_act);
@@ -119,12 +130,15 @@ function [ret, sym_theta, diff_theta, plots,sym_H] = inv_kin()
       new_plot(6*i-1, :) = eval_elb(2*i, :);
       new_plot(6*i, :) = base_hex(2*i, :);
     end
-    x_plot = new_plot(:, 1);
-    y_plot = new_plot(:, 2);
-    z_plot = new_plot(:, 3);
+    xdata = new_plot(:, 1);
+    ydata = new_plot(:, 2);
+    zdata = new_plot(:, 3);
     eval_hex(7, :) = eval_hex(1, :); % Makes graph prettier :)
-    plot3(x_plot, y_plot, z_plot, eval_hex(:, 1), eval_hex(:, 2), eval_hex(:, 3),...
-          'LineStyle', '-', 'Marker', 'o');
+    xhex = eval_hex(:, 1);
+    yhex = eval_hex(:, 2);
+    zhex = eval_hex(:, 3);
+    %plot3(x_plot, y_plot, z_plot, eval_hex(:, 1), eval_hex(:, 2), eval_hex(:, 3),...
+    %      'LineStyle', '-', 'Marker', 'o');
   end
 
 end
