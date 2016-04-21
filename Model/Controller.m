@@ -24,9 +24,9 @@ classdef Controller
                 tau=inv_dyn_func(q,d_q,dd_q_d+Kp*ep+Kv*ev);
             end
         end
-       
+
         function tau = RobustComputedTorque(K,Lambd)
-            
+
             m = 0.15; r = 0.15; g = 9.8;
             % the nominal parameter vector b0 is
 
@@ -36,33 +36,33 @@ classdef Controller
             I = m*r^2;
             G = m*g*r;
             b0 = [ I;B;G ];
-            
+
             epsilon=0.001;
             rho = .004; % see eq(27) in the paper.
-            
+
             tau = @RobustComputedTorque;
-            
+
             function tau = RobustComputedTorque(desired,actual)
                 desired=reshape(desired,[],3);
                 actual=reshape(actual,[],2);
-                
+
                 [q,d_q]=Controller.interpretInput(actual);
                 [q_d,d_q_d,dd_q_d]=Controller.interpretInput(desired);
-                
+
                 % ep=q_d-q;
                 % ev=d_q_d-d_q;
-                
+
                 ep=q-q_d;
                 ev=d_q-d_q_d;
-                
-                
+
+
                 r = ev + Lambd*ep;
                 v = d_q_d - Lambd*ep;
                 a = dd_q_d - Lambd*ev;
 %                Y2= [ a(1), v(1), sin(q(1)); a(2), v(2), sin(q(2)); a(3), v(3), sin(q(3)) ; a(4), v(4), sin(q(4)); a(5), v(5), sin(q(5)); a(6), v(6), sin(q(6))];
-                
+
                 Y2=[a,v,sin(q)];
-                
+
                 if norm(Y2'*r) > epsilon
                     u = -rho* Y2'*r/norm(Y2'*r)
                 else
@@ -80,7 +80,7 @@ classdef Controller
 
             tau = @Adaptive;
             persistent pihat
-            pihat = [1; 0];
+            pihat = [1; 0; zeros([size(Kd, 1), 1])];
 
             function u = Adaptive(desired,actual)
                 actual=reshape(actual,[],2);
@@ -91,12 +91,17 @@ classdef Controller
                 ev=d_q_d-d_q;
 
                 tau=inv_dyn_func(q,d_q,dd_q_d);
-                Y = [tau ones(size(tau))];
+                % Y is set so that the true dynamics are assumed to
+                % to be a linear function of the nominal dynamics
+                % (the first to parameters of pi). The remainder of Y
+                % and the remaining 9 parameters asusme that tau
+                % is also a linear combination of the velocity.
+                Y = [tau ones(size(tau)) diag(flipud(d_q))];
                 sigma = ev + delta * ep;
-                
+
                 pihatdot = Kpi * transpose(Y) * sigma;
-                pihat = pihat + pihatdot * dt;
-                
+                pihat = pihat + pihatdot * dt
+
                 u = Y * pihat + Kd * sigma;
             end
         end
