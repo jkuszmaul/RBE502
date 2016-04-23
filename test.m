@@ -10,7 +10,7 @@ close all;
 %% Plan
 t=sym('t','real');
 dt = 0.01;
-t_span=0:dt:5;
+t_span=0:dt:10;
 
 % c: desired=@(t)
 
@@ -38,10 +38,10 @@ trace_pts=evalf(d_work,t_span.');
 trace_pts=trace_pts(:,1:3,1,4);
 plot3(trace_pts(:,1),trace_pts(:,2),trace_pts(:,3))
 
-figure
-D=evalf(p,t_span.');
-plot(t_span,D(:,:,1));
-figure
+% figure
+% D=evalf(p,t_span.');
+% plot(t_span,D(:,:,1));
+% figure
 
 
 %% Control
@@ -49,17 +49,17 @@ figure
 
 Krobust = 0.1*eye(6);
 Lambda =0.5*eye(6); 
-Kp=.1*eye(6);
-Kv=.1*eye(6);
+Kp=10*eye(6);
+Kv=10*eye(6);
 Kpi=.1*eye(2);
 
 %c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
 c = Controller.RobustComputedTorque(Krobust,Lambda);
-%c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
+% c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
 
 %% Noise
 % n: desired=@(t)
-n=@(p,v,tau) normrnd(0,0, [6 1]);
+n=@(p,v,tau) normrnd(1,1, [6 1]);
 
 %% Simulation
 
@@ -92,10 +92,12 @@ traj_vel=traj(:,:,2);
 %   traj_vel(:, end+1) = traj(:, 2);
 % end
 
-plot(t_span,pos, t_span, traj_pos);
+plot(t_span,pos,'r', t_span, traj_pos,'b');
+% plot(t_span,pos, t_span, traj_pos);
 title('Position and Robust Control');
 figure
-plot(t_span,vel, t_span, traj_vel);
+plot(t_span,vel ,'r', t_span, traj_vel,'b');
+% plot(t_span,vel, t_span, traj_vel);
 title('Velocity and Robust Control');
 %figure
 %plot(t_span,adaptive_pos, t_span, traj_pos);
