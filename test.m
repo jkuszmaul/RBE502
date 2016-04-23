@@ -23,9 +23,9 @@ x0=zeros(6,2);
 
 sym_d=[ 1   0   0   0
        0   1   0   0
-       0   0   1   0.3+t/5
+       0   0   1   -2.5-t/5
        0   0   0   1];
-d_work=Planner.fromSym(sym_d,[]);
+d_work=Planner.fromSym(sym_d(1:3,:),[]);
 p=Planner.toJointSpace_func(d_work,t_span,[],@ik6_gen);
 
 D=evalf(p,t_span.');
@@ -33,6 +33,7 @@ plot(t_span,D(:,:,1));
 figure;
 D=evalf(d_work,t_span.');
 plot(t_span,D(:,3,1,4));
+figure
 %% Control
 % c: tau=@(desired,actual)
 
