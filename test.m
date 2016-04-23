@@ -53,11 +53,11 @@ Kp=10*eye(6);
 Kv=10*eye(6);
 Kpi=.1*eye(2);
 
-c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
-str_c=' Computed Torque';
+% c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
+% str_c=' Computed Torque';
 
-% c = Controller.RobustComputedTorque(Krobust,Lambda);
-% str_c=' Robust Control';
+c = Controller.RobustComputedTorque(Krobust,Lambda);
+str_c=' Robust Control';
 
 % c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
 % str_c=' Adaptive Control';
@@ -65,9 +65,10 @@ str_c=' Computed Torque';
 
 %% Noise
 % n: desired=@(t)
-n=@(p,v,tau) normrnd(0.5,1, [6 1]);
+% n=@(p,v,tau) normrnd(0.5,1, [6 1]);
 % n=@(p,v,tau) normrnd(0,1, [6 1]);
 % n=@(p,v,tau) normrnd(0,0, [6 1]);
+n=@(p,v,tau) normrnd(0.5,1, [6 1]) + 2 * [v(2);v(3);v(4);v(5);v(6);1];
 
 %% Simulation
 
@@ -78,11 +79,6 @@ n=@(p,v,tau) normrnd(0.5,1, [6 1]);
 % vel=Y(:,1+size(Y,2)/2:end);
 
 [pos,vel]=run_sim(x0(:,1),x0(:,2),p,c,n,t_span);
-
-% Try without adaptiveness.
-%Kpi=zeros(2);
-%c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
-%[adaptive_pos,adaptive_vel]=run_sim(x0(:,1),x0(:,2),p,c,n,t_span);
 
 %% Visualization
 
