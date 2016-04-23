@@ -53,17 +53,23 @@ Kp=10*eye(6);
 Kv=10*eye(6);
 Kpi=.1*eye(2);
 
-%c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
-c = Controller.RobustComputedTorque(Krobust,Lambda);
+c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
+str_c=' Computed Torque';
+
+% c = Controller.RobustComputedTorque(Krobust,Lambda);
+% str_c=' Robust Control';
+
 % c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
+% str_c=' Adaptive Control';
+
 
 %% Noise
 % n: desired=@(t)
-n=@(p,v,tau) normrnd(1,1, [6 1]);
+n=@(p,v,tau) normrnd(0.5,1, [6 1]);
+% n=@(p,v,tau) normrnd(0,1, [6 1]);
+% n=@(p,v,tau) normrnd(0,0, [6 1]);
 
 %% Simulation
-
-
 
 % ode=CreateODE(p,c,dyn,n);
 % options = odeset('RelTol',1e-4,'AbsTol',1e-4.*ones(numel(x0),1));
@@ -84,24 +90,14 @@ traj=evalf(p,t_span.');
 traj_pos=traj(:,:,1);
 traj_vel=traj(:,:,2);
 
-% traj_pos = [];
-% traj_vel = [];
-% for i = t_span
-%   traj = p(i);
-%   traj_pos(:, end+1) = traj(:, 1);
-%   traj_vel(:, end+1) = traj(:, 2);
-% end
 
 plot(t_span,pos,'r', t_span, traj_pos,'b');
 % plot(t_span,pos, t_span, traj_pos);
-title('Position and Robust Control');
+title(strcat('Position under ',str_c));
+
 figure
+
 plot(t_span,vel ,'r', t_span, traj_vel,'b');
 % plot(t_span,vel, t_span, traj_vel);
-title('Velocity and Robust Control');
-%figure
-%plot(t_span,adaptive_pos, t_span, traj_pos);
-%title('Position without Adaptive Control');
-%figure
-%plot(t_span,adaptive_vel, t_span, traj_vel);
-%title('Velocity without Adaptive Control');
+title(strcat('Velocity under ',str_c));
+
