@@ -1,4 +1,4 @@
-function sym_th = ik3_gen(in1)
+function sym_th = ik3_gen(in1,~)
 %IK3_GEN
 %    SYM_TH = IK3_GEN(IN1)
 

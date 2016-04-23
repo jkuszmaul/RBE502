@@ -97,12 +97,11 @@ classdef Controller
                 % and the remaining 9 parameters asusme that tau
                 % is also a linear combination of the velocity.
                 Y = [tau ones(size(tau)) diag([d_q(3) d_q(1) d_q(2)])];
-                sigma = ev + delta * ep
+                sigma = ev + delta * ep;
 
-                KYt = Kpi * transpose(Y)
+                KYt = Kpi * transpose(Y);
                 pihatdot = Kpi * transpose(Y) * sigma;
-                pihatdot
-                pihat = pihat + pihatdot * dt
+                pihat = pihat + pihatdot * dt;
 
                 u = Y * pihat + Kd * sigma;
             end
@@ -148,13 +147,16 @@ classdef Controller
             tau = @PD;
 
             function tau = PD(desired,actual)
+                desired=reshape(desired,[],3);
+                actual=reshape(actual,[],2);
+                
                 [q,d_q]=Controller.interpretInput(actual);
                 [q_d,d_q_d]=Controller.interpretInput(desired);
 
                 ep=q_d-q;
                 ev=d_q_d-d_q;
 
-                tau=Kp.*ep+Kd.*ev;
+                tau=Kp*ep+Kd*ev;
             end
         end
 
@@ -163,6 +165,9 @@ classdef Controller
             tau = @P;
 
             function tau = P(desired,actual)
+                desired=reshape(desired,[],3);
+                actual=reshape(actual,[],2);
+                
                 [q,~]=Controller.interpretInput(actual);
                 [q_d,~,~]=Controller.interpretInput(desired);
 

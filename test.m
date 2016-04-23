@@ -8,11 +8,10 @@ close all;
 [dyn,inv_dyn]=simple_dyn();
 
 %% Plan
+% p: desired=@(t)
 t=sym('t','real');
 dt = 0.01;
 t_span=0:dt:10;
-
-% c: desired=@(t)
 
 x0=zeros(6,2);
 
@@ -53,8 +52,8 @@ Kp=10*eye(6);
 Kv=10*eye(6);
 Kpi=.1*eye(2);
 
-c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
-str_c=' Computed Torque';
+% c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
+% str_c=' Computed Torque';
 
 % c = Controller.RobustComputedTorque(Krobust,Lambda);
 % str_c=' Robust Control';
@@ -64,10 +63,10 @@ str_c=' Computed Torque';
 
 
 %% Noise
-% n: desired=@(t)
-% n=@(p,v,tau) normrnd(0,0, [6 1]);
+% n: noise=@(p,v,tau)
+n=@(p,v,tau) normrnd(0,0, [6 1]);
 % n=@(p,v,tau) normrnd(0,1, [6 1]);
-n=@(p,v,tau) normrnd(0.5,1, [6 1]);
+% n=@(p,v,tau) normrnd(0.5,1, [6 1]);
 % n=@(p,v,tau) normrnd(0.5,1, [6 1]) + 3 * [v(6);v(1);v(2);v(3);v(4);v(5)];
 
 %% Simulation
@@ -90,10 +89,12 @@ traj_vel=traj(:,:,2);
 plot(t_span,pos,'r', t_span, traj_pos,'b');
 % plot(t_span,pos, t_span, traj_pos);
 title(strcat('Position under ',str_c));
+xlabel('time (s)')
+ylabel('position (radians)')
 
-figure
+% figure
 
-plot(t_span,vel ,'r', t_span, traj_vel,'b');
-% plot(t_span,vel, t_span, traj_vel);
-title(strcat('Velocity under ',str_c));
+% plot(t_span,vel ,'r', t_span, traj_vel,'b');
+% % plot(t_span,vel, t_span, traj_vel);
+% title(strcat('Velocity under ',str_c));
 
