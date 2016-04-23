@@ -96,10 +96,12 @@ classdef Controller
                 % (the first to parameters of pi). The remainder of Y
                 % and the remaining 9 parameters asusme that tau
                 % is also a linear combination of the velocity.
-                Y = [tau ones(size(tau)) diag(flipud(d_q))];
-                sigma = ev + delta * ep;
+                Y = [tau ones(size(tau)) diag([d_q(3) d_q(1) d_q(2)])];
+                sigma = ev + delta * ep
 
+                KYt = Kpi * transpose(Y)
                 pihatdot = Kpi * transpose(Y) * sigma;
+                pihatdot
                 pihat = pihat + pihatdot * dt
 
                 u = Y * pihat + Kd * sigma;

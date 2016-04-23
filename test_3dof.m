@@ -1,5 +1,6 @@
 %clear all; close all; clc;
 close all;
+addpath Model;
 
 %% Kinematics
 % [ret, sym_theta, diff_theta, plots,H] = inv_kin();
@@ -24,17 +25,17 @@ p=Planner.fromSym([sin(t)*ones(2,1);0]);
 
 Krobust = 0.1*eye(3);
 Lambda =0.5*eye(3);
-Kp=.1*eye(3);
-Kv=.1*eye(3);
-Kpi=diag([.1 .1 3*ones(1, 3)]);
-dt = 0.01;
+Kp=.2*eye(3);
+Kv=.2*eye(3);
+Kpi=diag([.1 .1 2*ones(1, 3)]);
+dt = 0.001;
 %c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
 %c = Controller.RobustComputedTorque(Krobust,Lambda);
 c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
 
 %% Noise
 % n: desired=@(t)
-n=@(p,v,tau) normrnd(3,2, [3 1]) + 20 * flipud(v);
+n=@(p,v,tau) normrnd(3,2, [3 1]) + 20 * [v(3);v(1);v(2)];
 
 
 %% Simulation
@@ -45,7 +46,7 @@ t_span=0:dt:5;
 
 % Do a animated plot.
 [xdata, ydata, zdata] = plotter(pos(:, 1));
-[gxdata, gydata, gzdata] = plotter(pos(:, 1));
+[gxdata, gydata, gzdata] = plotter(goal(:, 1));
 TruePlot = plot3(xdata, ydata, zdata);
 set(TruePlot, 'Color', 'green');
 set(TruePlot, 'DisplayName', 'Actual');
@@ -53,18 +54,25 @@ hold on;
 GoalPlot = plot3(gxdata, gydata, gzdata);
 set(GoalPlot, 'DisplayName', 'Goal Trajectory');
 legend('show');
-for i = 1:1
-  for i = 1:size(pos, 2)
-    [xdata, ydata, zdata] = plotter(pos(:, i));
-    goal = p(dt * i);
-    [gxdata, gydata, gzdata] = plotter(goal(:, 1));
-    set(TruePlot, 'XData', xdata);
-    set(TruePlot, 'YData', ydata);
-    set(TruePlot, 'ZData', zdata);
-    set(GoalPlot, 'XData', gxdata);
-    set(GoalPlot, 'YData', gydata);
-    set(GoalPlot, 'ZData', gzdata);
+% Do calculations and drawing separately.
+for i = 1:size(pos, 2)
+  [xdata(i, :), ydata(i, :), zdata(i, :)] = plotter(pos(:, i));
+  goal = p(dt * i);
+  [gxdata(i, :), gydata(i, :), gzdata(i, :)] = plotter(goal(:, 1));
+end
+for i = 1:3
+  % Use scale to only draw every Nth iteration.
+  % If we try to draw too many, then it will just go slowly.
+  scale = 50;
+  for i = 1:size(pos, 2)/scale
+    set(TruePlot, 'XData', xdata(i*scale, :));
+    set(TruePlot, 'YData', ydata(i*scale, :));
+    set(TruePlot, 'ZData', zdata(i*scale, :));
+    set(GoalPlot, 'XData', gxdata(i*scale, :));
+    set(GoalPlot, 'YData', gydata(i*scale, :));
+    set(GoalPlot, 'ZData', gzdata(i*scale, :));
     drawnow;
+    pause(scale * dt);
   end
 end
 clf;
