@@ -233,7 +233,7 @@ classdef Planner
                 pos=squeeze(workspace_d(:,1,:));
                 des=inv_kin(pos,prevPos);
                 [~,I] = min(abs(des),[],2);
-                desired{i}=des(I);
+                desired{i}=des(sub2ind(size(des),(1:size(des,1)).',I));
                 prevPos=desired{i};
                 if ~isempty(inv_vel) && (i==1||i==n)
                     vel=squeeze(workspace_d(:,2,:));

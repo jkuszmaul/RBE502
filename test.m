@@ -21,19 +21,29 @@ x0=zeros(6,2);
 %p=Planner.fromSym(sin(t)*ones(6,1));
 %p=Planner.trapezoid(x0,[0.4*ones(6,1),zeros(6,1)],1,1);
 
-sym_d=[ 1   0   0   0
-       0   1   0   0
-       0   0   1   -2.5-t/5
-       0   0   0   1];
+% sym_d=[ 1   0   0   0
+%        0   1   0   0
+%        0   0   1   -2.5-t/5
+%        0   0   0   1];
+   
+sym_d=[ 1   0   0   .5*sin(t);
+        0   1   0   .5*cos(t);
+        0   0   1   -3;
+        0   0   0   1]
 d_work=Planner.fromSym(sym_d(1:3,:),[]);
 p=Planner.toJointSpace_func(d_work,t_span,[],@ik6_gen);
 
+
+trace_pts=evalf(d_work,t_span.');
+trace_pts=trace_pts(:,1:3,1,4);
+plot3(trace_pts(:,1),trace_pts(:,2),trace_pts(:,3))
+
+figure
 D=evalf(p,t_span.');
 plot(t_span,D(:,:,1));
-figure;
-D=evalf(d_work,t_span.');
-plot(t_span,D(:,3,1,4));
 figure
+
+
 %% Control
 % c: tau=@(desired,actual)
 
