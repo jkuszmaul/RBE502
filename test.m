@@ -29,7 +29,7 @@ x0=zeros(6,2);
 sym_d=[ 1   0   0   .5*sin(t);
         0   1   0   .5*cos(t);
         0   0   1   -3;
-        0   0   0   1]
+        0   0   0   1];
 d_work=Planner.fromSym(sym_d(1:3,:),[]);
 p=Planner.toJointSpace_func(d_work,t_span,[],@ik6_gen);
 
@@ -53,11 +53,11 @@ Kp=10*eye(6);
 Kv=10*eye(6);
 Kpi=.1*eye(2);
 
-% c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
-% str_c=' Computed Torque';
+c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
+str_c=' Computed Torque';
 
-c = Controller.RobustComputedTorque(Krobust,Lambda);
-str_c=' Robust Control';
+% c = Controller.RobustComputedTorque(Krobust,Lambda);
+% str_c=' Robust Control';
 
 % c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
 % str_c=' Adaptive Control';
@@ -67,8 +67,8 @@ str_c=' Robust Control';
 % n: desired=@(t)
 % n=@(p,v,tau) normrnd(0,0, [6 1]);
 % n=@(p,v,tau) normrnd(0,1, [6 1]);
-% n=@(p,v,tau) normrnd(0.5,1, [6 1]);
-% n=@(p,v,tau) normrnd(0.5,1, [6 1]) + 2 * [v(6);v(1);v(2);v(3);v(4);v(5)];
+n=@(p,v,tau) normrnd(0.5,1, [6 1]);
+% n=@(p,v,tau) normrnd(0.5,1, [6 1]) + 3 * [v(6);v(1);v(2);v(3);v(4);v(5)];
 
 %% Simulation
 

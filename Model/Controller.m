@@ -64,7 +64,7 @@ classdef Controller
                 Y2=[a,v,sin(q)];
 
                 if norm(Y2'*r) > epsilon
-                    u = -rho* Y2'*r/norm(Y2'*r)
+                    u = -rho* Y2'*r/norm(Y2'*r);
                 else
                     u= - rho* Y2'*r/epsilon;
                 end
