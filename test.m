@@ -65,10 +65,10 @@ str_c=' Robust Control';
 
 %% Noise
 % n: desired=@(t)
-% n=@(p,v,tau) normrnd(0.5,1, [6 1]);
-% n=@(p,v,tau) normrnd(0,1, [6 1]);
 % n=@(p,v,tau) normrnd(0,0, [6 1]);
-n=@(p,v,tau) normrnd(0.5,1, [6 1]) + 2 * [v(2);v(3);v(4);v(5);v(6);1];
+% n=@(p,v,tau) normrnd(0,1, [6 1]);
+% n=@(p,v,tau) normrnd(0.5,1, [6 1]);
+% n=@(p,v,tau) normrnd(0.5,1, [6 1]) + 2 * [v(6);v(1);v(2);v(3);v(4);v(5)];
 
 %% Simulation
 
