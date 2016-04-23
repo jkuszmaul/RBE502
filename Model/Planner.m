@@ -10,7 +10,7 @@ classdef Planner
 
     methods(Static)
         function d_func = fromSym(sym_q,sym_t)
-            if nargin<2
+            if nargin<2 || isempty(sym_t)
                 vars=symvar(sym(sym_q));
                 if numel(vars)>0
                     sym_t=vars(1);
@@ -18,30 +18,12 @@ classdef Planner
                     sym_t=sym('t','real');
                 end
             end
-
-            desired_t(:,1)=sym_q;
-            desired_t(:,2)=diff(sym_q,sym_t);
-            desired_t(:,3)=diff(desired_t(:,2),sym_t);
+            
+            desired_t(:,1,:)=sym_q;
+            desired_t(:,2,:)=diff(sym_q,sym_t);
+            desired_t(:,3,:)=diff(desired_t(:,2,:),sym_t);
 
             d_func=matlabFunction(desired_t,'Vars',sym_t);
-        end
-
-        function d_func = fromList(desired_list,t0,step)
-            n=numel(desired_list);
-
-            d_func=@fromList;
-            function desired = fromList(t)
-                index=(t-t0)/step;
-                i1=floor(index);
-                i2=ceil(index);
-                if i1==i2
-                    desired=desired_list(index);
-                elseif i2>n
-                    desired=desired_list(n);
-                else
-                    desired=Planner.interpolate(t,i1*step,desired_list(i1),i2*step,desired_list(i2));
-                end
-            end
         end
 
         function d_func = spline(desired_list,t_range)
@@ -49,34 +31,34 @@ classdef Planner
             sz=size(desired_list{1});
             funcs=cell(sz(1),1);
 %             t_range=t0:step:n*step;
-
+            
             for q_i=1:sz(1)
                 q_d=zeros(n,1);
-
+                
                 for i=1:n
                     q_d(i)=desired_list{i}(q_i,1);
                 end
-
+                
                 if size(desired_list{1},2)>1
                     vi=desired_list{1}(q_i,2);
                 else
                     vi=0;
                 end
-
+                
                 if size(desired_list{n},2)>1
                     vf=desired_list{n}(q_i,2);
                 else
                     vf=0;
                 end
-
+                
                 pp=spline(t_range,[vi;q_d;vf]);
                 d_pp=deriv_pp(pp);
                 dd_pp=deriv_pp(d_pp);
                 funcs{q_i}=@(t)[ppval(pp,t),ppval(d_pp,t),ppval(dd_pp,t)];
             end
-
+            
             d_func = Planner.join(funcs);
-
+            
             function d_pp=deriv_pp(pp)
                 [breaks,coefs,l,k,d] = unmkpp(pp);
                 % make the polynomial that describes the derivative
@@ -205,13 +187,13 @@ classdef Planner
             end
         end
 
-        function d_func = toJointSpace(d_func,equ_q,vars,t_range)
-            equ_q=equ_q(:,1);
+        function d_func = toJointSpace_sym(d_func,sym_q,vars,t_range)
+            sym_q=sym_q(:,1);
             vars=reshape(vars,[],1);
-
+            
             map_pos=mapPos;
             map_vel=mapVel;
-
+            
 %             t_range=t0:t_step:tf;
             n=numel(t_range);
             desired=cell(n,1);
@@ -222,22 +204,47 @@ classdef Planner
                     desired{i}=[desired{i},map_vel(workspace_d(:,1:2))];
                 end
             end
-
+            
             d_func=Planner.spline(desired,t_range);
-
+            
             function func = mapPos
-                sym_q=equ_q;
-
                 func=matlabFunction(sym_q,'Vars',{vars});
             end
             function func = mapVel
-                sym_q=equ_q;
-                [sym_d_q,d_vars,~]=Planner.diffT(sym_q,vars);
-%                 [sym_dd_q,~,~]=Planner.diffT(sym_d_q,vars);
-
-                func=matlabFunction(sym_d_q,'Vars',{[vars,d_vars]});
+                [sym_d_q,q,d_q,~]=diffT(sym_q,vars);
+                
+                func=matlabFunction(sym_d_q,'Vars',{[q,d_q]});
             end
         end
+        function d_func = toJointSpace_func(d_func,t_range,x0,inv_kin,inv_vel,inv_acc)
+%             t_range=t0:t_step:tf;
+            if nargin<5
+                inv_vel=[];
+            end
+            if nargin<6
+                inv_acc=[];
+            end
+            
+            n=numel(t_range);
+            desired=cell(n,1);
+            prevPos=x0;
+            for i=1:n
+                workspace_d=d_func(t_range(i));
+                pos=squeeze(workspace_d(:,1,:));
+                des=inv_kin(pos);
+                desired{i}=des(:,1);
+                prevPos=desired{i};
+                if ~isempty(inv_vel) && (i==1||i==n)
+                    vel=squeeze(workspace_d(:,2,:));
+                    desired{i}=[desired{i},inv_vel(pos,...
+                        H_Trans.toVelocityWrench(H_Trans(pos),H_Trans(vel)))];
+                end
+            end
+            
+            d_func=Planner.spline(desired,t_range);
+            
+        end
+
 
         function d_func = join(funcs)
             n=numel(funcs);

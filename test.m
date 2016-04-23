@@ -8,22 +8,31 @@ close all;
 [dyn,inv_dyn]=simple_dyn();
 
 %% Plan
+t=sym('t','real');
+dt = 0.01;
+t_span=0:dt:5;
+
 % c: desired=@(t)
 
 x0=zeros(6,2);
 
-t=sym('t','real');
+
 %p=Planner.fromSym(0.4*ones(6,1),t);
-p=Planner.fromSym(sin(t)*ones(6,1));
+%p=Planner.fromSym(sin(t)*ones(6,1));
 %p=Planner.trapezoid(x0,[0.4*ones(6,1),zeros(6,1)],1,1);
 
-% sym_d=[ 1   0   0   0
-%        0   1   0   0
-%        0   0   1   -0.3+t/10
-%        0   0   0   1];
-% d_work=Planner.fromSym(reshape(sym_d,[],1));
-% p=Planner.toJointSpace(d_work,sym_theta,H,0:0.01:5);
+sym_d=[ 1   0   0   0
+       0   1   0   0
+       0   0   1   0.3+t/5
+       0   0   0   1];
+d_work=Planner.fromSym(sym_d,[]);
+p=Planner.toJointSpace_func(d_work,t_span,[],@ik6_gen);
 
+D=evalf(p,t_span.');
+plot(t_span,D(:,:,1));
+figure;
+D=evalf(d_work,t_span.');
+plot(t_span,D(:,3,1,4));
 %% Control
 % c: tau=@(desired,actual)
 
@@ -32,7 +41,7 @@ Lambda =0.5*eye(6);
 Kp=.1*eye(6);
 Kv=.1*eye(6);
 Kpi=.1*eye(2);
-dt = 0.01;
+
 %c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
 c = Controller.RobustComputedTorque(Krobust,Lambda);
 %c=Controller.AdaptiveSimple(inv_dyn,Kv,Kv^-1 * Kp, Kpi,dt);
@@ -43,7 +52,7 @@ n=@(p,v,tau) normrnd(0,0, [6 1]);
 
 %% Simulation
 
-t_span=0:dt:5;
+
 
 % ode=CreateODE(p,c,dyn,n);
 % options = odeset('RelTol',1e-4,'AbsTol',1e-4.*ones(numel(x0),1));

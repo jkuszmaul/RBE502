@@ -1,4 +1,4 @@
-function sym_theta = ik6_gen(in1)
+function sym_theta = ik6_gen(in1,~)
 %IK6_GEN
 %    SYM_THETA = IK6_GEN(IN1)
 
