@@ -37,10 +37,10 @@ trace_pts=evalf(d_work,t_span.');
 trace_pts=trace_pts(:,1:3,1,4);
 plot3(trace_pts(:,1),trace_pts(:,2),trace_pts(:,3))
 
-% figure
-% D=evalf(p,t_span.');
-% plot(t_span,D(:,:,1));
-% figure
+figure
+D=evalf(p,t_span.');
+plot(t_span,D(:,:,1));
+figure
 
 
 %% Control
@@ -52,8 +52,8 @@ Kp=10*eye(6);
 Kv=10*eye(6);
 Kpi=.1*eye(2);
 
-% c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
-% str_c=' Computed Torque';
+c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
+str_c=' Computed Torque';
 
 % c = Controller.RobustComputedTorque(Krobust,Lambda);
 % str_c=' Robust Control';

@@ -109,10 +109,13 @@ classdef Controller
 
         function tau = PID(Kp,Ki,Kd)
 
-            sum=zeros(size(Kp));
+            sum=zeros(size(Kp,1),1);
             tau = @PID;
 
             function tau = PID(desired,actual)
+                desired=reshape(desired,[],3);
+                actual=reshape(actual,[],2);
+                
                 [q,d_q]=Controller.interpretInput(actual);
                 [q_d,d_q_d]=Controller.interpretInput(desired);;
 
@@ -121,7 +124,7 @@ classdef Controller
 
                 sum=sum+ep;
 
-                tau=Kp.*ep+Kd.*ev+Ki.*sum;
+                tau=Kp*ep+Kd*ev+Ki*sum;
             end
         end
 

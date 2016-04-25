@@ -37,13 +37,20 @@ Kp_adaptive=.2*eye(3);
 Kv_adaptive=.2*eye(3);
 Kpi=diag([.1 .1 2*ones(1, 3)]);
 
-Kp=10*eye(3);
-Kv=10*eye(3);
+Kp_comp=10*eye(3);
+Kv_comp=10*eye(3);
 
-c = Controller.PD(Kp_adaptive,Kv_adaptive);
-str_c=' PD Control';
+Kp=.5*eye(3);
+Kv=.1*eye(3);
+Ki=0.1*eye(3);
 
-% c = Controller.ComputedTorque(inv_dyn,Kp,Kv);
+% c = Controller.PD(Kp,Kv);
+% str_c=' PD Control';
+
+c = Controller.PID(Kp,Kv,Ki);
+str_c=' PID Control';
+
+% c = Controller.ComputedTorque(inv_dyn,Kp_comp,Kv_comp);
 % str_c=' Computed Torque';
 
 % c = Controller.RobustComputedTorque(Krobust,Lambda);
@@ -55,7 +62,7 @@ str_c=' PD Control';
 %% Noise
 % n: noice=@(p,v,tau)
 
-n=@(p,v,tau) normrnd(0,0, [3 1]);
+% n=@(p,v,tau) normrnd(0,0, [3 1]);
 % n=@(p,v,tau) normrnd(0,1, [3 1]);
 % n=@(p,v,tau) normrnd(0.5,1, [3 1]);
 % n=@(p,v,tau) normrnd(3,2, [3 1]) + 20 * [v(3);v(1);v(2)];
@@ -111,6 +118,11 @@ figure
 traj=evalf(p,t_span.');
 traj_pos=traj(:,:,1);
 traj_vel=traj(:,:,2);
+
+% figure
+% N=evalf(n,traj_pos,traj_vel,zeros(size(traj_pos)));
+% plot(t_span,N(:,:));
+% figure
 
 
 plot(t_span,pos,'r', t_span, traj_pos,'b');
